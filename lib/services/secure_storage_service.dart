@@ -1,52 +1,56 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../utils/logger.dart';
+
+/// Service penyimpanan aman untuk data sensitif (token, PIN).
+///
+/// Memakai [Logger] sehingga tidak ada nilai sensitif yang tercetak.
 class SecureStorageService {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
-  // Key yang digunakan
+
   static const String _tokenKey = 'auth_token';
   static const String _pinKey = 'user_pin';
-  // Menyimpan token
+
+  /// Menyimpan token.
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
-    // ✅ Logging aman: tidak mencetak token
-    print('Token berhasil disimpan');
+    Logger.info('Token berhasil disimpan');
   }
 
-  // Membaca token
+  /// Membaca token, `null` jika belum ada.
   Future<String?> getToken() async {
     final token = await _storage.read(key: _tokenKey);
-    // ✅ Logging aman: hanya menyebutkan status
-    print(token != null ? 'Token ditemukan' : 'Token tidak ditemukan');
+    Logger.debug(token != null ? 'Token ditemukan' : 'Token tidak ditemukan');
     return token;
   }
 
-  // Menghapus token
+  /// Menghapus token.
   Future<void> deleteToken() async {
     await _storage.delete(key: _tokenKey);
-    print('Token berhasil dihapus');
+    Logger.info('Token berhasil dihapus');
   }
 
-  // Menyimpan PIN
+  /// Menyimpan PIN.
   Future<void> savePin(String pin) async {
     await _storage.write(key: _pinKey, value: pin);
-    print('PIN berhasil disimpan');
+    Logger.info('PIN berhasil disimpan');
   }
 
-  // Membaca PIN
+  /// Membaca PIN, `null` jika belum ada.
   Future<String?> getPin() async {
     return await _storage.read(key: _pinKey);
   }
 
-  // Menghapus semua data
+  /// Menghapus semua data.
   Future<void> deleteAll() async {
     await _storage.deleteAll();
-    print('Semua data berhasil dihapus');
+    Logger.info('Semua data berhasil dihapus');
   }
 
-  // Cek keberadaan token
+  /// Memeriksa keberadaan token.
   Future<bool> hasToken() async {
     return await _storage.containsKey(key: _tokenKey);
   }

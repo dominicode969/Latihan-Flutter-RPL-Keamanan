@@ -1,31 +1,55 @@
 import 'package:flutter/material.dart';
 
 import '../models/user.dart';
+import '../config/dependency_injector.dart';
 import '../repositories/user_repository.dart';
-import '../repositories/user_repository_impl.dart';
 import '../widgets/user_card.dart';
 
-/// Halaman untuk menampilkan daftar pengguna.
+/// Halaman daftar pengguna.
 ///
-/// Halaman ini menggunakan [UserRepository] untuk mengambil data,
-/// sehingga UI tidak bergantung langsung pada [ApiService].
+/// Memakai [UserRepository], bukan [ApiService] secara langsung.
 class UserListScreen extends StatefulWidget {
   final UserRepository? repository;
+
   const UserListScreen({super.key, this.repository});
+
   @override
   State<UserListScreen> createState() => _UserListScreenState();
 }
 
 class _UserListScreenState extends State<UserListScreen> {
   late final UserRepository _repository;
+  final TextEditingController _searchController = TextEditingController();
   List<User> _users = [];
   bool _isLoading = true;
   String? _errorMessage;
+  String _query = '';
+
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? UserRepositoryImpl();
+    _repository =
+        widget.repository ?? DependencyProvider.read(context).userRepository;
     _loadUsers();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Latihan 4: filter berdasarkan nama atau email (real-time)
+  List<User> get _filteredUsers {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _users;
+    return _users
+        .where(
+          (u) =>
+              u.name.toLowerCase().contains(q) ||
+              u.email.toLowerCase().contains(q),
+        )
+        .toList();
   }
 
   Future<void> _loadUsers() async {
@@ -34,12 +58,16 @@ class _UserListScreenState extends State<UserListScreen> {
       _errorMessage = null;
     });
     try {
+      // Untuk menguji timeout, ganti sementara dengan:
+      // await _repository.getUsers(timeout: const Duration(milliseconds: 1));
       final users = await _repository.getUsers();
+      if (!mounted) return;
       setState(() {
         _users = users;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -79,6 +107,7 @@ class _UserListScreenState extends State<UserListScreen> {
         ),
       );
     }
+
     if (_errorMessage != null) {
       return Center(
         child: Padding(
@@ -109,18 +138,55 @@ class _UserListScreenState extends State<UserListScreen> {
         ),
       );
     }
+
     if (_users.isEmpty) {
       return const Center(child: Text('Tidak ada data pengguna'));
     }
-    return RefreshIndicator(
-      onRefresh: _loadUsers,
-      child: ListView.builder(
-        itemCount: _users.length,
-        itemBuilder: (context, index) {
-          final user = _users[index];
-          return UserCard(user: user, onTap: () => _showUserDetail(user));
-        },
-      ),
+
+    final filtered = _filteredUsers;
+
+    return Column(
+      children: [
+        // Latihan 4: kolom pencarian
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Cari nama atau email...',
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                    ),
+            ),
+            onChanged: (value) => setState(() => _query = value),
+          ),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? const Center(child: Text('Pengguna tidak ditemukan'))
+              : RefreshIndicator(
+                  onRefresh: _loadUsers,
+                  child: ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final user = filtered[index];
+                      return UserCard(
+                        user: user,
+                        onTap: () => _showUserDetail(user),
+                      );
+                    },
+                  ),
+                ),
+        ),
+      ],
     );
   }
 

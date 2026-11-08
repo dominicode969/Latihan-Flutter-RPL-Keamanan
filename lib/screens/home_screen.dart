@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../services/secure_storage_service.dart';
+import 'login_screen.dart';
+import 'post_list_screen.dart';
 import 'user_list_screen.dart';
+import 'validation_demo_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -78,6 +81,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Latihan 2: logout dengan dialog konfirmasi
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Apakah Anda yakin ingin logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    await _storageService.deleteToken();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,6 +118,13 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Secure Storage & HTTP'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -92,6 +132,23 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Latihan 1: status login
+              Card(
+                color: _hasToken ? Colors.green[50] : Colors.red[50],
+                child: ListTile(
+                  leading: Icon(
+                    _hasToken ? Icons.verified_user : Icons.person_off,
+                    color: _hasToken ? Colors.green : Colors.red,
+                  ),
+                  title: Text(
+                    _hasToken ? 'Status: Sudah login' : 'Status: Belum login',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: const Text('Berdasarkan token di secure storage'),
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // Section 1: Secure Storage
               Card(
                 child: Padding(
@@ -231,6 +288,51 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: const Text('Lihat Daftar Pengguna'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Latihan 3: tombol menuju daftar post
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PostListScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.article),
+                          label: const Text('Lihat Daftar Post'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Pertemuan 6, Latihan 3: demo validasi input
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ValidationDemoScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.verified),
+                          label: const Text('Demo Validasi Input'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),

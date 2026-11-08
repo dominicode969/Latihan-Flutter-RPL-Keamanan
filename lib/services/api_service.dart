@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import '../models/post.dart';
 import '../models/user.dart';
+import '../utils/logger.dart';
 
 /// Service untuk komunikasi HTTP dengan REST API.
 ///
@@ -132,7 +133,7 @@ class ApiService {
 
       if (email.isNotEmpty && password.isNotEmpty) {
         final token = 'dummy_token_${DateTime.now().millisecondsSinceEpoch}';
-        print('Login berhasil');
+        Logger.info('Login berhasil');
         return token;
       } else {
         throw Exception('Email dan password tidak boleh kosong');
@@ -155,12 +156,12 @@ class ApiService {
 
   /// Logging request yang aman (tidak mencetak token/API key).
   void _logRequest(String method, String endpoint) {
-    print('[$method] $_baseUrl$endpoint');
+    Logger.info('[$method] $_baseUrl$endpoint');
   }
 
   /// Logging response yang aman (hanya status code).
   void _logResponse(int statusCode) {
-    print('Response status: $statusCode');
+    Logger.debug('Response status: $statusCode');
   }
 
   /// Menutup client.

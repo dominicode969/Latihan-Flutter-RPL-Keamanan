@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../config/dependency_injector.dart';
 import '../services/api_service.dart';
 import '../services/secure_storage_service.dart';
+import '../utils/validators.dart';
 import 'home_screen.dart';
 
 // Latihan 1: form login sederhana dengan token disimpan di secure storage
@@ -16,10 +18,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _api = ApiService();
+  late final ApiService _api;
   final _storage = SecureStorageService();
   bool _isLoading = false;
   bool _obscure = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _api = DependencyProvider.read(context).apiService;
+  }
 
   @override
   void dispose() {
@@ -87,16 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: Icon(Icons.email),
                       border: OutlineInputBorder(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Email tidak boleh kosong';
-                      }
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                          .hasMatch(value.trim())) {
-                        return 'Format email tidak valid';
-                      }
-                      return null;
-                    },
+                    validator: Validators.validateEmail,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

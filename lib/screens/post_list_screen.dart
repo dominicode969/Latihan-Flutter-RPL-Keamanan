@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../config/dependency_injector.dart';
 import '../models/post.dart';
-import '../services/api_service.dart';
+import '../repositories/post_repository.dart';
 
-// Latihan 3: daftar posts dari JSONPlaceholder
+/// Halaman daftar post (Latihan 1).
+///
+/// Menggunakan [PostRepository], bukan [ApiService] secara langsung.
 class PostListScreen extends StatefulWidget {
-  const PostListScreen({super.key});
+  final PostRepository? repository;
+
+  const PostListScreen({super.key, this.repository});
 
   @override
   State<PostListScreen> createState() => _PostListScreenState();
 }
 
 class _PostListScreenState extends State<PostListScreen> {
-  final ApiService _apiService = ApiService();
+  late final PostRepository _repository;
   List<Post> _posts = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -20,6 +25,8 @@ class _PostListScreenState extends State<PostListScreen> {
   @override
   void initState() {
     super.initState();
+    _repository =
+        widget.repository ?? DependencyProvider.read(context).postRepository;
     _loadPosts();
   }
 
@@ -29,7 +36,7 @@ class _PostListScreenState extends State<PostListScreen> {
       _errorMessage = null;
     });
     try {
-      final posts = await _apiService.getPosts();
+      final posts = await _repository.getPosts();
       if (!mounted) return;
       setState(() {
         _posts = posts;
